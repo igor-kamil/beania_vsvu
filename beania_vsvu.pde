@@ -1,20 +1,22 @@
 /***********************************************************************
  ------------------------------------------------------------------------
- for LOWII
- (c) 2011, Igor Rjabinin	
+ for BEANIA_VSVU
+ (c) 2012, Igor Rjabinin, Matej Fandl	
  ------------------------------------------------------------------------
  
- SPACE/MEDZERNIK -> vypne/zapne posielanie midi noteOn na zaklade pohybu 
- pred kamerou. dobre pre namapovanie midi klikanim 
- F         -> vypne/zapne fullscreen 
- R         -> zobrazi v rohu aktualne FPS 
+ r         -> zobrazi v rohu aktualne FPS 
+ 1,2...0   -> prepinanie stavov: 1=kasiopea++, 2=lowii, 3=kasiopea--
+ s         -> Show video
+ b         -> blur pre smooth cut
+ t         -> roTate on/off
+ z         -> random z-axis on/off
+ F         -> "wannabe" Flocking on/off
+ 
 
 *************************************************************************/
 
 import processing.video.*;
 import processing.opengl.*;
-import themidibus.*;
-import fullscreen.*; 
 import ddf.minim.*;
 import ddf.minim.analysis.*;
 
@@ -43,9 +45,6 @@ char symbol = 's';
 
 /**************************** GLOB. PREMENNE ***********************************/
 ArrayList stars;
-
-MidiBus myBus; 
-SoftFullScreen fs; 
 
 int numPixels;
 Capture video;
@@ -98,18 +97,6 @@ void setup() {
   frameRate(20);
   smooth();
   
-  MidiBus.list(); // zobrazi dostupne midi zariadenia na STDOUT : index a nazov
-
-  // pre testovanie staci:
-  //                 Parent  In        Out
-  //                   |     |          |
-  // myBus = new MidiBus(this, "", "ATU"); // vytvori MidiBus s outputom Java Sound Synthesizer
-  // myBus = new MidiBus(this, "", "Java Sound Synthesizer"); // vytvori MidiBus s outputom Java Sound Synthesizer
-  myBus = new MidiBus(this, "", "FastTrack Pro"); // vytvori MidiBus s outputom Java Sound Synthesizer
-
-//  fs = new FullScreen(this); // klasicky
-  fs = new SoftFullScreen(this); // soft
-
   video = new Capture(this, width , height);
     video.settings();
 
@@ -274,7 +261,6 @@ void playGrid() {
 
   if(camera_on) {
 
-
 	maxX =  maxX - (width / 2);
 	maxY = maxY - (height / 2);
 
@@ -282,18 +268,6 @@ void playGrid() {
         Star last = (Star) stars.get(stars.size() - 1);
         float osZ = (randZ) ? int(random(-200, 200)) : 0;
         last.setValues(maxX, maxY, osZ);
-
-        int mapX = (int) map(maxX, -(video.width / 2), (video.width / 2), 0, 127); 
-        int mapY = (int) map(maxY, -(video.height / 2), (video.height / 2), 127, 0); 
-
-        //if (!knob) {
-          myBus.sendNoteOn(channel, mapX, mapY); // posle midi noteOn(channel, pitch, velocity)
-       // } 
-       // else {
-          myBus.sendControllerChange(channel, knobX, mapX);
-          myBus.sendControllerChange(channel, knobY, mapY);
-          // myBus.sendControllerChange(channel, knobI, mapI);
-       // }
 
   }
 }
@@ -354,18 +328,6 @@ void keyPressed() {
         }
         println("cam input " + camera_on );
         break;
-      case 'f':
-        if (!fullscreen) {
-          fs.enter();
-          fullscreen=true;
-          println("entering fullscreen");
-        } 
-        else {
-          fs.leave();
-          fullscreen=false;
-          println("leaving fullscreen");
-        }
-        break;
       case 'F':
         if (!flocking) {
           flocking=true;
@@ -393,18 +355,6 @@ void keyPressed() {
         else knob = true;
         println("knob " + knob );
         break;
-//      case  '1':
-//        myBus.sendControllerChange(channel, knobX, 100);
-//        println("sync knob1");
-//        break;
-//      case  '2':
-//        myBus.sendControllerChange(channel, knobY, 100);
-//        println("sync knob2");
-//        break;
-//      case  '3':
-//        myBus.sendControllerChange(channel, knobI, 100);
-//        println("sync knob3");
-//        break;
       case  't':
         if (autoRotation==true) autoRotation = false;
         else autoRotation = true;
