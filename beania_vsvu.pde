@@ -19,6 +19,7 @@ import processing.video.*;
 import processing.opengl.*;
 import ddf.minim.*;
 import ddf.minim.analysis.*;
+import codeanticode.protablet.*;
 
 
 
@@ -48,6 +49,7 @@ ArrayList stars;
 
 int numPixels;
 Capture video;
+Tablet tablet;
 
 float totalMovement;
 
@@ -89,6 +91,8 @@ boolean autoRotation = false;
 boolean randZ = false;
 boolean show_video = false;
 boolean flocking = false;
+boolean drawing=false;   // ci kresli na tablete prave
+
 
 /**************************** SETUP ***********************************/
 
@@ -100,7 +104,6 @@ void setup() {
   video = new Capture(this, width , height);
     video.settings();
 
-//  video.settings();
   numPixels = video.width * video.height;
 
   img = createImage(video.width, video.height, RGB);
@@ -108,6 +111,8 @@ void setup() {
   background(0);
   
   stars = new ArrayList();
+  
+  tablet = new Tablet(this); 
   
   // ***** BEAT DETECTION
   minim = new Minim(this);
@@ -160,8 +165,10 @@ void draw() {
      
     background(0);
     if (show_video) image(img, 0, 0, width, height);
-
-    findLightPosition();
+    
+    if(drawing){   
+      addStar();
+    }
     
     translate(width/2, height/2);
     
@@ -223,46 +230,14 @@ void mirrorFrame() {
       img.updatePixels();
 }
 
-void findLightPosition() {
 
-      maxX = 0; 
-      maxY=0; 
-      maxBrightness = 0; 
-      // pre kazdy pixel z aktualneho frame-u ho porovname s tym istym pixlom
-      // v predchadzajucom frame-e -> a ziskany rozdiel (diff) scitujem pre kazdy jeden pad
-      for (int i=0; i<numPixels; i++) {
-        int posX = i % img.width;
-        int posY = floor(i / img.width);
 
-        // pouzitie zabudovanej funckie brightness() sa neosvedcilo - je strasne pomale (fps ~15)
-        //int curBrightness = (int)brightness(video.pixels[i]);
-        // nasiel som taketo riesenie -> napokon (fps ~24)
-
-        color curColor = img.pixels[i];
-
-        // ziskam cervenu, zelenu a modru zlozku aktualneho pixelu
-        int currR = (curColor >> 16) & 0xFF; // v dokumentacii sa odporuca ako rychlejsia verzia funkcie red()
-        int currG = (curColor >> 8) & 0xFF;
-        int currB = curColor & 0xFF;
-
-        float currBrightness =  (currR + currG + currB) / 3; // toto neni hodnota rozdielu v brightness - ale je to pre nas ucel lepsia hodnota
-        if (currBrightness > maxBrightness) {
-          maxBrightness = (int)currBrightness;
-          maxX = posX;
-          maxY = posY;
-        }
-      }
-
-      // funkcia na vyhodnotenie a posielanie midi signalu
-      if (maxBrightness > triggerThreshold)  playGrid();
-}
-
-void playGrid() {
+void addStar() {
 
   if(camera_on) {
 
-	maxX =  maxX - (width / 2);
-	maxY = maxY - (height / 2);
+	maxX =  mouseX - (width / 2);
+	maxY =  mouseY - (height / 2);
 
         stars.add(new Star());
         Star last = (Star) stars.get(stars.size() - 1);
@@ -288,12 +263,30 @@ void makeBlur() {
   filter(BLUR, 1);
 }
 
+/*
 void mousePressed() {
   stars.add(new Star());
   Star last = (Star) stars.get(stars.size() - 1);
   float osZ = (randZ) ? int(random(-200, 200)) : 0;
   last.setValues(mouseX - width/2, mouseY  - height/2, osZ);
 }
+*/
+
+void mousePressed(){
+  addStar();
+  noCursor();
+}
+
+
+void mouseDragged(){
+  drawing=true;
+}   
+
+void mouseReleased(){
+  drawing=false; 
+  cursor(CROSS);
+}
+
 
 void keyPressed() {
   // vypnutie/zapnutie posielania midi na zaklade pohybu pred kamerou
