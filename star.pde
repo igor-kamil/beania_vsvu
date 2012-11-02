@@ -2,6 +2,7 @@ class Star {
   float x, y, z;
   float timer;
   boolean die = true;
+  boolean nextShape = false;
   
   Star() {
     timer = maxLife;

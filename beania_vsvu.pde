@@ -12,7 +12,7 @@
  z         -> random z-axis on/off
  F         -> "wannabe" Flocking on/off
  
-
+ 
 *************************************************************************/
 
 import processing.video.*;
@@ -100,20 +100,20 @@ void setup() {
   size(800, 600, P3D);
   frameRate(20);
   smooth();
-  
-  video = new Capture(this, width , height);
-    video.settings();
+
+  video = new Capture(this, width, height);
+  video.settings();
 
   numPixels = video.width * video.height;
 
   img = createImage(video.width, video.height, RGB);
 
   background(0);
-  
+
   stars = new ArrayList();
-  
+
   tablet = new Tablet(this); 
-  
+
   // ***** BEAT DETECTION
   minim = new Minim(this);
   song = minim.getLineIn(Minim.STEREO, 512);
@@ -122,9 +122,8 @@ void setup() {
   kickSize = snareSize = hatSize = minWeight;
   bl = new BeatListener(beat, song);
   // **** / BEAT DETECTION
-  
-  w = new WConstellation();
 
+  w = new WConstellation();
 }
 
 
@@ -132,7 +131,7 @@ void draw() {
   if ( beat.isKick() ) kickSize = maxWeight;
   if ( beat.isSnare() ) snareSize = maxWeight;
   if ( beat.isHat() ) hatSize = maxWeight;
-  
+
   if (autoRotation) {
     angleX +=kickSize;
     angleY +=snareSize;
@@ -144,114 +143,117 @@ void draw() {
   else if (video.available()) {
 
     switch (lowii_state) {
-      case 1: 
-        w.display(x);
-        x = x + 0.005;
-        break;
-      case 3: 
-        w.display(x);
-        x = x - 0.005;
-        break;
-       case 2:
-       case 7:
-       case 8:
-       case 9:
-       
+    case 1: 
+      w.display(x);
+      x = x + 0.005;
+      break;
+    case 3: 
+      w.display(x);
+      x = x - 0.005;
+      break;
+    case 2:
+    case 7:
+    case 8:
+    case 9:
 
-    if (!makeBlur) {
-      video.read(); // citaj novy snimok z kamery
-      mirrorFrame(); // zrkadlovo prevrati obraz
-     }
-     
-    background(0);
-    if (show_video) image(img, 0, 0, width, height);
-    
-    if(drawing){   
-      addStar();
-    }
-    
-    translate(width/2, height/2);
-    
-    if (rotation) {
-      // Rotate around y and x axes
-  //    rotateY(radians(mouseX));
-  //    rotateX(radians(mouseY));
-      angleX = mouseX;
-      angleY = mouseY;
-    }
-  
-    rotateY(radians(angleX));
-    rotateX(radians(angleY));  
-  
-    float prevX = 0; float prevY = 0; float prevZ = 0;
-    for(int i = 0; i < stars.size(); i++) {
-      Star star = (Star) stars.get(i);
-      if (i > 0) {
-          if (autoRotation) { strokeWeight(hatSize);  }
+
+      if (!makeBlur) {
+        video.read(); // citaj novy snimok z kamery
+        mirrorFrame(); // zrkadlovo prevrati obraz
+      }
+
+      background(0);
+      if (show_video) image(img, 0, 0, width, height);
+
+      if (drawing) {   
+        addStar();
+      }
+
+      translate(width/2, height/2);
+
+      if (rotation) {
+        // Rotate around y and x axes
+        //    rotateY(radians(mouseX));
+        //    rotateX(radians(mouseY));
+        angleX = mouseX;
+        angleY = mouseY;
+      }
+
+      rotateY(radians(angleX));
+      rotateX(radians(angleY));  
+
+      float prevX = 0; 
+      float prevY = 0; 
+      float prevZ = 0;
+      boolean noLine = true; //noLine je tu, ak chceme preskocit spojenie 2 bodov - v pripade ze ide o dalsi objekt
+      for (int i = 0; i < stars.size(); i++) {
+        Star star = (Star) stars.get(i);
+        if (!noLine) {
+          //          if (autoRotation) { strokeWeight(hatSize);  }
+          strokeWeight(kickSize); //reagovat to moze stale
           star.lineTo(prevX, prevY, prevZ);
-      }
-//      strokeWeight(kickSize);
-//      float starSize = (kickSize==1) ? 4 : kickSize;
-      float starSize = 4;
-      if (flocking) star.applyFlockingForce();
-      star.display(starSize);
-      prevX = star.x; prevY = star.y; prevZ = star.z;
-      
-      if (star.dead()) {
+        }
+        //      strokeWeight(kickSize);
+        //      float starSize = (kickSize==1) ? 4 : kickSize;
+        float starSize = 4;
+        if (flocking) star.applyFlockingForce();
+        star.display(starSize);
+        prevX = star.x; 
+        prevY = star.y; 
+        prevZ = star.z;
+        noLine = star.nextShape;
+
+        if (star.dead()) {
           stars.remove(i);
+        }
       }
-  
-    }
-    
-    break; //end normal
+
+      break; //end normal
     }// end switch
- 
   } // end video available  
   showFps();
 
   kickSize = constrain(kickSize * changeSpeed, minWeight, maxWeight);
   snareSize = constrain(snareSize * changeSpeed, minWeight, maxWeight);
   hatSize = constrain(hatSize * changeSpeed, minWeight, maxWeight);
-
 }
 
 void mirrorFrame() {
 
-      video.loadPixels();
+  video.loadPixels();
 
-      for (int i=0; i<numPixels; i++) {
-        int posX = i % video.width;	     // x coordinate of pixel
-        int posY = floor(i / video.width);   // y coordinate of pixel
+  for (int i=0; i<numPixels; i++) {
+    int posX = i % video.width;	     // x coordinate of pixel
+    int posY = floor(i / video.width);   // y coordinate of pixel
 
-        posX = video.width - posX - 1;       // flip x coordinate if we want to flip
-        img.pixels[posY * video.width + posX] = video.pixels[i];
-      }
+    posX = video.width - posX - 1;       // flip x coordinate if we want to flip
+    img.pixels[posY * video.width + posX] = video.pixels[i];
+  }
 
-      img.updatePixels();
+  img.updatePixels();
 }
 
 
 
 void addStar() {
 
-  if(camera_on) {
+  if (camera_on) {
 
-	maxX =  mouseX - (width / 2);
-	maxY =  mouseY - (height / 2);
+    maxX =  mouseX - (width / 2);
+    maxY =  mouseY - (height / 2);
 
-        stars.add(new Star());
-        Star last = (Star) stars.get(stars.size() - 1);
-        float osZ = (randZ) ? int(random(-200, 200)) : 0;
-        last.setValues(maxX, maxY, osZ);
-
+    stars.add(new Star());
+    Star last = (Star) stars.get(stars.size() - 1);
+    float osZ = (randZ) ? int(random(-200, 200)) : 0;
+    last.setValues(maxX, maxY, osZ);
   }
 }
 
 
 void showFps() {
-    if (show_fps) { 
-      println(frameRate);
-    }
+  if (show_fps) { 
+    println(frameRate);
+  }
 }
 
 void showVideo() {
@@ -265,26 +267,29 @@ void makeBlur() {
 
 /*
 void mousePressed() {
-  stars.add(new Star());
-  Star last = (Star) stars.get(stars.size() - 1);
-  float osZ = (randZ) ? int(random(-200, 200)) : 0;
-  last.setValues(mouseX - width/2, mouseY  - height/2, osZ);
-}
-*/
+ stars.add(new Star());
+ Star last = (Star) stars.get(stars.size() - 1);
+ float osZ = (randZ) ? int(random(-200, 200)) : 0;
+ last.setValues(mouseX - width/2, mouseY  - height/2, osZ);
+ }
+ */
 
-void mousePressed(){
+void mousePressed() {
   addStar();
   noCursor();
 }
 
 
-void mouseDragged(){
+void mouseDragged() {
   drawing=true;
 }   
 
-void mouseReleased(){
+void mouseReleased() {
   drawing=false; 
   cursor(CROSS);
+  Star last = (Star) stars.get(stars.size() - 1);
+  last.nextShape = true;
+  println("next shape");
 }
 
 
@@ -297,91 +302,95 @@ void keyPressed() {
     else if (keyNumber == 9) symbol = 't';
     else if (keyNumber == 7) symbol = 'r';    
     println("lowii_state: " + lowii_state + symbol);
-  } else {
+  } 
+  else {
     switch(key) {
-      case ' ':
-        if (camera_on==true) camera_on = false;
-        else camera_on = true;
-        println("cam input " + camera_on );
-        break; 
-      case 's':
-        if (show_video==true) show_video = false;
-        else show_video = true;
-        println("show video: " + show_video );
-        break;
-      case 'b':
-        if (camera_on==true) {
-          camera_on = false;
-          makeBlur = true;
-          stars = new ArrayList();
-        } 
-        else {
-          camera_on = true;
-          makeBlur = false;
-        }
-        println("cam input " + camera_on );
-        break;
-      case 'F':
-        if (!flocking) {
-          flocking=true;
-          println("started flocking");
-        } 
-        else {
-          flocking=false;
-          println("leaving flocking");
-        }
-        break;
-      case 'r':
-        if (show_fps==true) show_fps = false;
-        else show_fps = true;
-        break;
-      case '-':
-        if (triggerThreshold < 255) triggerThreshold += step;
-        println("threshold: " + triggerThreshold + "/255");
-        break;
-      case '+':
-        if (triggerThreshold > 0) triggerThreshold -= step;
-        println("threshold: " + triggerThreshold + "/255");
-        break;
-      case 'k':
-        if (knob==true) knob = false;
-        else knob = true;
-        println("knob " + knob );
-        break;
-      case  't':
-        if (autoRotation==true) autoRotation = false;
-        else autoRotation = true;
-        println("rotation " + autoRotation );
-        break;
+    case ' ':
+      if (camera_on==true) camera_on = false;
+      else camera_on = true;
+      println("cam input " + camera_on );
+      break; 
+    case 's':
+      if (show_video==true) show_video = false;
+      else show_video = true;
+      println("show video: " + show_video );
+      break;
+    case 'b':
+      if (camera_on==true) {
+        camera_on = false;
+        makeBlur = true;
+        stars = new ArrayList();
+      } 
+      else {
+        camera_on = true;
+        makeBlur = false;
+      }
+      println("cam input " + camera_on );
+      break;
+    case 'F':
+      if (!flocking) {
+        flocking=true;
+        println("started flocking");
+      } 
+      else {
+        flocking=false;
+        println("leaving flocking");
+      }
+      break;
+    case 'r':
+      if (show_fps==true) show_fps = false;
+      else show_fps = true;
+      break;
+    case '-':
+      if (triggerThreshold < 255) triggerThreshold += step;
+      println("threshold: " + triggerThreshold + "/255");
+      break;
+    case '+':
+      if (triggerThreshold > 0) triggerThreshold -= step;
+      println("threshold: " + triggerThreshold + "/255");
+      break;
+    case 'k':
+      if (knob==true) knob = false;
+      else knob = true;
+      println("knob " + knob );
+      break;
+    case  't':
+      if (autoRotation==true) autoRotation = false;
+      else autoRotation = true;
+      println("rotation " + autoRotation );
+      break;
       // reset view
-      case  'a':
-        angleX = 0;
-        angleY = 0;
-        println("reset view");
-        break;
-      case  'z':
-        if (randZ==true) randZ = false;
-        else randZ = true;
-        println("random Z " + randZ );
-        break;
-      case  'o':
-        x = 0;
-        break;
-      case  'O':
-        x = 20;
-        break;
-      case CODED:
-        if (keyCode == UP) {
-          angleY += 7;
-        } else if (keyCode == DOWN) {
-          angleY -= 7;
-        }
-        if (keyCode == LEFT) {
-          angleX -= 7;
-        } else if (keyCode == RIGHT) {
-          angleX += 7;
-        }         
-        break; // end CODED
-    } // end switch  
-  } // end else 
+    case  'a':
+      angleX = 0;
+      angleY = 0;
+      println("reset view");
+      break;
+    case  'z':
+      if (randZ==true) randZ = false;
+      else randZ = true;
+      println("random Z " + randZ );
+      break;
+    case  'o':
+      x = 0;
+      break;
+    case  'O':
+      x = 20;
+      break;
+    case CODED:
+      if (keyCode == UP) {
+        angleY += 7;
+      } 
+      else if (keyCode == DOWN) {
+        angleY -= 7;
+      }
+      if (keyCode == LEFT) {
+        angleX -= 7;
+      } 
+      else if (keyCode == RIGHT) {
+        angleX += 7;
+      }         
+      break; // end CODED
+    } // end switch
+  } // end else
 }
+
